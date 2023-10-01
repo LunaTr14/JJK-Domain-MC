@@ -1,0 +1,4 @@
+name: JJK-Domain
+version: '${project.version}'
+main: xyz.lunatrn.Main
+api-version: '1.20'

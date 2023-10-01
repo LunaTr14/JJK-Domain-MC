@@ -20,12 +20,9 @@ public class JJKEventHandler implements Listener {
     }
 
     @EventHandler
-    public boolean onPlayerInteract(PlayerInteractEvent e){
-        if(isHoldingStick((Player) e)){
+    public void onPlayerInteract(PlayerInteractEvent e){
+        if(isHoldingStick(e.getPlayer())){
             // Domain Verify and Create
         }
-        return true;
     }
-
-
 }

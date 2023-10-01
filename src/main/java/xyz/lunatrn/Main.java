@@ -9,15 +9,19 @@ import java.util.logging.Logger;
 
 public final class Main extends JavaPlugin {
 
-    Logger logger = this.getLogger();
+    private Logger logger = this.getLogger();
+    private JJKEventHandler jjkEventHandler;
+
     @Override
     public void onEnable() {
-        this.logger.log(Level.INFO,"JJK-Domains Enabled");
+        this.jjkEventHandler = new JJKEventHandler(this);
+        this.logger.log(Level.INFO, "JJK-Domains Enabled");
     }
 
     @Override
     public void onDisable() {
-        this.logger.log(Level.INFO,"JJK-Domains Disabled");
+        this.logger.log(Level.INFO, "JJK-Domains Disabled");
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {

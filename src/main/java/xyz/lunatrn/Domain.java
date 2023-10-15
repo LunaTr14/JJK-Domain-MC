@@ -46,16 +46,15 @@ public class Domain {
     private void createDomainShell(){
         getHighestBlock(domainOwner.getLocation()).setType(Material.OBSIDIAN);
     }
-    public void activateDomain(Player domainOwner){
-        this.serv = domainOwner.getServer();
-        this.domainOwner = domainOwner;
-        this.domainWorld = serv.getWorld(domainOwner.getUniqueId().toString());
-        domainWorld.getWorldBorder().setSize(64);
-        if(!hasCooldownPassed()){
-            return;
+    public static void activateDomain(Player domainOwner, Server server){
+        if(!doesDomainWorldExist(domainOwner,server.getWorlds())){
+            createNewDomainWorld(domainOwner.getUniqueId().toString());
         }
-        findNearbyPlayers();
-        teleportPlayers();
-        createDomainShell();
+        World domainWorld = getDomainWorld(domainOwner,server);
+        Player[] nearbyPlayers = getNearbyPlayers(domainOwner,server);
+        Location teleportLocation = createDomainTeleportLocation(domainOwner,domainWorld);
+        teleportPlayers(nearbyPlayers,teleportLocation);
+        broadcastTeleportEvent(domainOwner,nearbyPlayers);
+        buffDomainOwner(domainOwner);
     }
 }

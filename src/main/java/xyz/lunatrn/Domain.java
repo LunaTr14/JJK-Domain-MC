@@ -6,79 +6,72 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.LinkedList;
-import java.util.List;
 
 public class Domain {
+    public Player domainOwner;
+    public boolean isDomainActive = false;
+    private LinkedList<Player> trappedPlayers;
 
-    static int DOMAIN_BREAK_TIME_TICKS = 10 * 20;
-
-    int domainHealth = 10;
-
-    private static int DOMAIN_EFFECT_RANGE = 5;
+    private Location originalLocation;
 
     static PotionEffect[] DOMAIN_OWNER_BUFF = {
-            new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE,DOMAIN_BREAK_TIME_TICKS,3),
-            new PotionEffect(PotionEffectType.INCREASE_DAMAGE,DOMAIN_BREAK_TIME_TICKS, 3)
+            new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 999999,3),
+            new PotionEffect(PotionEffectType.INCREASE_DAMAGE,999999, 3)
     };
 
-
-    private static boolean doesDomainWorldExist(Player p, List<World> worldNames){
-        for(World world : worldNames){
-            if(world.getName().equalsIgnoreCase(p.getUniqueId().toString())) return true;
+    public Domain(Player domainOwner, LinkedList<Player> trappedPlayers){
+        this.domainOwner = domainOwner;
+        this.trappedPlayers = trappedPlayers;
+        if(trappedPlayers.size() == 0){
+            this.breakDomain();
         }
-        return false;
+        this.isDomainActive = true;
+        this.originalLocation = domainOwner.getLocation();
     }
-
-    private static void createNewDomainWorld(String domainName){
-        new WorldCreator(domainName).createWorld();
-    }
-    
-    private static World getDomainWorld(Player domainOwner, Server server){
-        return server.getWorld(domainOwner.getUniqueId().toString());
-    }
-    
-    private static Player[] getNearbyPlayers(Player domainOwner, Server server){
-        Location domainOwnerLocation = domainOwner.getLocation();
-        Player[] nearbyPlayers = {};
-        for(Player onlinePlayer : server.getOnlinePlayers()){
-            if(domainOwnerLocation.distance(onlinePlayer.getLocation()) > DOMAIN_EFFECT_RANGE){
-                nearbyPlayers[nearbyPlayers.length] = onlinePlayer;
-            }
+    public void createDomain(){
+        // Cancels domain activation If there are no players trapped
+        if(!isDomainActive){
+            return;
         }
-        return nearbyPlayers;
+        buffOwner();
+        createNewWorld(); // Optimise World Creation Later
+        teleportPlayersIntoDomain();
     }
 
-    private static Location createDomainTeleportLocation(Player domainOwner, World domainWorld) {
-        Location domainLocation = domainOwner.getLocation();
-        domainLocation.setWorld(domainWorld);
-        domainLocation.setY(domainWorld.getHighestBlockYAt(domainLocation));
-        return domainLocation;
+    public void breakDomain(){
+        if(!isDomainActive)return;
+        isDomainActive = false;
+        teleportPlayersOutOfDomain();
     }
 
-    private static void teleportPlayers(Player[] playersToTeleport, Location newLocation){
-        for(Player playerToTeleport : playersToTeleport){
-            playerToTeleport.teleport(newLocation);
+    private void buffOwner(){
+        for(PotionEffect effect : DOMAIN_OWNER_BUFF){
+            this.domainOwner.addPotionEffect(effect);
         }
     }
 
-    private static void broadcastTeleportEvent(Player domainOwner,Player[] players){
-        for(Player player : players){
-            player.sendMessage(domainOwner.getName() + " has activated their domain");
+    private World getDomainWorld(){
+        return domainOwner.getServer().getWorld(domainOwner.getUniqueId().toString());
+    }
+
+    private void createNewWorld(){
+        World newWorld = new  WorldCreator(domainOwner.getUniqueId().toString()).createWorld();
+        newWorld.getWorldBorder().setSize(200,200);
+        newWorld.getWorldBorder().setCenter(0,0);
+    }
+    private void teleportPlayersIntoDomain(){
+        World domainWorld = domainOwner.getServer().getWorld(domainOwner.getUniqueId().toString());
+        Location domainLocation = new Location(domainWorld,0,domainWorld.getHighestBlockYAt(0,0),0);
+        domainOwner.teleport(domainLocation);
+        for(Player p: trappedPlayers){
+            p.teleport(domainLocation);
         }
     }
-    private static void buffDomainOwner(Player domainOwner) {
-        for(PotionEffect effect : DOMAIN_OWNER_BUFF)
-            domainOwner.addPotionEffect(effect);
-    }
-    public static void activateDomain(Player domainOwner, Server server){
-        if(!doesDomainWorldExist(domainOwner,server.getWorlds())){
-            createNewDomainWorld(domainOwner.getUniqueId().toString());
+
+    private void teleportPlayersOutOfDomain(){
+        domainOwner.teleport(originalLocation);
+        for(Player p : trappedPlayers){
+            p.teleport(originalLocation);
         }
-        World domainWorld = getDomainWorld(domainOwner,server);
-        Player[] nearbyPlayers = getNearbyPlayers(domainOwner,server);
-        Location teleportLocation = createDomainTeleportLocation(domainOwner,domainWorld);
-        teleportPlayers(nearbyPlayers,teleportLocation);
-        broadcastTeleportEvent(domainOwner,nearbyPlayers);
-        buffDomainOwner(domainOwner);
     }
 }
